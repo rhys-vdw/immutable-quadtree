@@ -1,68 +1,72 @@
 
-/*
-  containsPoint(x, y) {
-    return (
-      x >= this.centerX - this.extent &&
-      x <= this.centerX + this.extent &&
-      y >= this.centerY - this.extent &&
-      y <= this.centerY + this.extent
-    )
-  }
-}
-*/
 
-type TreeNode<T> = LeafNode<T> | SubdividedNode<T>
-
-interface LeafNode<T> {
-  elements: Array<T>
+interface Point {
+  x: number
+  y: number
 }
 
-interface SubdividedNode<T> {
-  ne: TreeNode<T>
-  nw: TreeNode<T>
-  sw: TreeNode<T>
-  se: TreeNode<T>
+interface Bounds {
+  centerX: number
+  centerY: number
+  extent: number
 }
 
-function isLeafNode(obj: any) : boolean {
-  return obj.elements !== undefined
+type QuadTree<T extends Point> = LeafNode<T> | SubdividedNode<T>
+
+interface LeafNode<T extends Point> {
+  bounds: Bounds
+  elements: T[]
 }
 
-function isSubdividedNode(obj: any): boolean {
-  return obj.ne !== undefined
+interface SubdividedNode<T extends Point> {
+  bounds: Bounds
+  ne: QuadTree<T>
+  nw: QuadTree<T>
+  sw: QuadTree<T>
+  se: QuadTree<T>
+}
+
+function isLeafNode<T extends Point>(obj: QuadTree<T>) : obj is LeafNode<T> {
+  return (obj as LeafNode<T>).elements !== undefined
+}
+
+function isSubdividedNode<T extends Point>(obj: QuadTree<T>): obj is SubdividedNode<T> {
+  return (obj as SubdividedNode<T>).ne !== undefined
+}
+
+interface ElementsByQuadrant<T extends Point> {
+  ne: T[]
+  nw: T[]
+  sw: T[]
+  se: T[]
 }
 
 const MAX_ELEMENTS = 4
-const NORTH_WEST = 'nw'
-const NORTH_EAST = 'ne'
-const SOUTH_WEST = 'sw'
-const SOUTH_EAST = 'se'
 
-function createBounds(centerX, centerY, extent) {
-  this.centerX = centerX;
-  this.centerY = centerY;
-  this.extent = extent;
+function createBounds(centerX: number, centerY: number, extent: number): Bounds {
+  return { centerX, centerY, extent }
 }
 
-function createQuadtree(bounds, elements) {
+function createQuadtree<T extends Point>(bounds: Bounds, elements: T[]): QuadTree<T> {
   if (elements.length > MAX_ELEMENTS) {
     return subdivideQuadtree(bounds, elements)
   }
   return { bounds, elements }
 }
 
-function groupByQuadrant(bounds, elements) {
-  return elements.reduce((result, element) => {
+function groupByQuadrant<T extends Point>(bounds, elements: T[]): ElementsByQuadrant<T> {
+  return elements.reduce((result, element: T) => {
     result[getQuadrant(bounds, element)].push(element)
+    return result
   }, {
-    [NORTH_WEST]: [],
-    [NORTH_EAST]: [],
-    [SOUTH_WEST]: [],
-    [SOUTH_EAST]: [],
+    nw: [],
+    ne: [],
+    sw: [],
+    se: [],
   })
 }
 
-function subdivideQuadtree(bounds, elements) {
+function subdivideQuadtree<T extends Point>(bounds: Bounds, elements: T[]): SubdividedNode<T> {
 
   // Subdivide bounds
   const halfExtent = bounds.extent / 2
@@ -77,14 +81,14 @@ function subdivideQuadtree(bounds, elements) {
   // Return subdivided quadtree
   return {
     bounds,
-    [NORTH_WEST]: createQuadtree(nwBounds, elementsByQuadrant[NORTH_WEST]),
-    [NORTH_EAST]: createQuadtree(neBounds, elementsByQuadrant[NORTH_EAST]),
-    [SOUTH_WEST]: createQuadtree(swBounds, elementsByQuadrant[SOUTH_WEST]),
-    [SOUTH_EAST]: createQuadtree(seBounds, elementsByQuadrant[SOUTH_EAST]),
+    nw: createQuadtree(nwBounds, elementsByQuadrant.nw),
+    ne: createQuadtree(neBounds, elementsByQuadrant.ne),
+    sw: createQuadtree(swBounds, elementsByQuadrant.sw),
+    se: createQuadtree(seBounds, elementsByQuadrant.se),
   }
 }
 
-function insertElements(quadTree, elements) {
+function insertElements<T extends Point>(quadTree: QuadTree<T>, elements) {
 
   // If there are no elements then we're sweet.
   if (elements.length === 0) {
@@ -92,41 +96,41 @@ function insertElements(quadTree, elements) {
   }
 
   // If this is a lead node...
-  if (quadTree.elements) {
+  if (isLeafNode(quadTree)) {
     const nextElements = [...quadTree.elements, ...elements]
     return nextElements.length > MAX_ELEMENTS
       ? subdivideQuadtree(quadTree.bounds, elements)
       : { ...quadTree, elements: nextElements }
   }
 
-  // Otherwise split them up and insert them into children.
+  // Split them up and insert them into children.
   const elementsByQuadrant = groupByQuadrant(quadTree.bounds, elements)
-}
-
-function getQuadrant(bounds, element) {
-  if (element.x < bounds.centerX) {
-    return element.y < bounds.centerY
-      ? NORTH_WEST
-      : SOUTH_WEST
-  }
-  return element.y < bounds.centerY
-    ? NORTH_EAST
-    : SOUTH_EAST
-}
-
-/*
-function insert(quadTree, element) {
-  if (quadTree.elements.length < MAX_ELEMENTS) {
-    return insertElements(quadTree, element)
-  }
-
-  const quadrant = getQuadrant(quadTree.bounds, element)
-
   return {
-    ...quadTree,
-    [quadrant]: quadTree[quadrant] === undefined
-      ? createQuadtree(getQuadrantBounds(quadTree.bounds, quadrant), [element])
-      : insertElement(quadTree, element)
+    bounds: quadTree.bounds,
+    nw: insertElements(quadTree.nw, elementsByQuadrant.nw),
+    ne: insertElements(quadTree.ne, elementsByQuadrant.ne),
+    sw: insertElements(quadTree.sw, elementsByQuadrant.sw),
+    se: insertElements(quadTree.se, elementsByQuadrant.se),
   }
 }
-*/
+
+function getQuadrant<T extends Point>(bounds: Bounds, element: T) {
+  return element.x < bounds.centerX
+    ? element.y < bounds.centerY ? 'nw' : 'sw'
+    : element.y < bounds.centerY ? 'ne' : 'se'
+}
+
+
+const points: Point[] = []
+for (let i = 0; i < 20; i++) {
+  points.push({ x: Math.random(), y: Math.random() })
+}
+
+import { inspect } from 'util'
+const t = createQuadtree(createBounds(0.5, 0.5, 0.5), points)
+const y = insertElements(t, [
+  { x: 0.01, y: 0.01, thing: 'TOP LEFT' },
+  { x: 0.5, y: 0.5, thing: 'MIDDLE' },
+])
+console.log(inspect(t, { depth: 10 }))
+console.log(inspect(y, { depth: 10 }))
