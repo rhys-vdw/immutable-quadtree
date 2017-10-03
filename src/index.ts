@@ -1,4 +1,6 @@
 
+import { without } from 'lodash'
+import { inspect } from 'util'
 
 interface Point {
   x: number
@@ -114,6 +116,30 @@ function insertElements<T extends Point>(quadTree: QuadTree<T>, elements) {
   }
 }
 
+function removeElements<T extends Point>(quadTree: QuadTree<T>, elements): QuadTree<T> {
+  if (elements.length === 0) {
+    return quadTree
+  }
+
+  if (isLeafNode(quadTree)) {
+    const nextElements = without(quadTree.elements, ...elements)
+    if (nextElements.length !== (quadTree.elements.length - elements.length)) {
+      throw new TypeError('Tried to remove elements that were not in quad tree')
+    }
+    return { ...quadTree, elements: nextElements }
+  }
+
+  // Split them up and remove them from children.
+  const elementsByQuadrant = groupByQuadrant(quadTree.bounds, elements)
+  return {
+    bounds: quadTree.bounds,
+    nw: removeElements(quadTree.nw, elementsByQuadrant.nw),
+    ne: removeElements(quadTree.ne, elementsByQuadrant.ne),
+    sw: removeElements(quadTree.sw, elementsByQuadrant.sw),
+    se: removeElements(quadTree.se, elementsByQuadrant.se),
+  }
+}
+
 function getQuadrant<T extends Point>(bounds: Bounds, element: T) {
   return element.x < bounds.centerX
     ? element.y < bounds.centerY ? 'nw' : 'sw'
@@ -126,11 +152,13 @@ for (let i = 0; i < 20; i++) {
   points.push({ x: Math.random(), y: Math.random() })
 }
 
-import { inspect } from 'util'
 const t = createQuadtree(createBounds(0.5, 0.5, 0.5), points)
-const y = insertElements(t, [
+const extra = [
   { x: 0.01, y: 0.01, thing: 'TOP LEFT' },
   { x: 0.5, y: 0.5, thing: 'MIDDLE' },
-])
-console.log(inspect(t, { depth: 10 }))
-console.log(inspect(y, { depth: 10 }))
+]
+const before = insertElements(t, extra)
+const after = removeElements(before, extra)
+console.log(inspect(before, { depth: 10 }))
+console.log('\n\n-------------------\n\n')
+console.log(inspect(after, { depth: 10 }))
