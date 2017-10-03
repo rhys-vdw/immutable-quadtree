@@ -49,6 +49,16 @@ function createBounds(centerX: number, centerY: number, extent: number): Bounds 
   return { centerX, centerY, extent }
 }
 
+function containsPoint(bounds: Bounds, point: Point) {
+  return (
+    point.x >= bounds.centerX - bounds.extent &&
+    point.x <= bounds.centerX + bounds.extent &&
+    point.y >= bounds.centerY - bounds.extent &&
+    point.y <= bounds.centerY + bounds.extent
+  )
+}
+
+
 function createQuadtree<T extends Point>(bounds: Bounds, elements: T[]): QuadTree<T> {
   if (elements.length > MAX_ELEMENTS) {
     return subdivideQuadtree(bounds, elements)
@@ -101,8 +111,8 @@ function insertElements<T extends Point>(quadTree: QuadTree<T>, elements) {
   if (isLeafNode(quadTree)) {
     const nextElements = [...quadTree.elements, ...elements]
     return nextElements.length > MAX_ELEMENTS
-      ? subdivideQuadtree(quadTree.bounds, elements)
-      : { ...quadTree, elements: nextElements }
+      ? subdivideQuadtree(quadTree.bounds, nextElements)
+      : { bounds: quadTree.bounds, elements: nextElements }
   }
 
   // Split them up and insert them into children.
@@ -140,25 +150,73 @@ function removeElements<T extends Point>(quadTree: QuadTree<T>, elements): QuadT
   }
 }
 
-function getQuadrant<T extends Point>(bounds: Bounds, element: T) {
-  return element.x < bounds.centerX
-    ? element.y < bounds.centerY ? 'nw' : 'sw'
-    : element.y < bounds.centerY ? 'ne' : 'se'
+function getQuadrant<T extends Point>(bounds: Bounds, point: T): string {
+  return point.x < bounds.centerX
+    ? point.y < bounds.centerY ? 'nw' : 'sw'
+    : point.y < bounds.centerY ? 'ne' : 'se'
 }
 
+function getElementsInBounds<T extends Point>(quadTree: QuadTree<T>, bounds: Bounds, result: T[] = []): T[] {
+  if (isLeafNode(quadTree)) {
+    quadTree.elements.forEach(element => {
+      if (containsPoint(bounds, element)) {
+        result.push(element)
+      }
+    })
+  } else {
+    const minX = bounds.centerX - bounds.extent
+    const maxX = bounds.centerX + bounds.extent
+    const minY = bounds.centerY - bounds.extent
+    const maxY = bounds.centerY + bounds.extent
 
-const points: Point[] = []
-for (let i = 0; i < 20; i++) {
-  points.push({ x: Math.random(), y: Math.random() })
+    if (minX < quadTree.bounds.centerX) {
+      if (minY < quadTree.bounds.centerY) {
+        getElementsInBounds(quadTree.nw, bounds, result)
+      }
+      if (maxY > quadTree.bounds.centerY) {
+        getElementsInBounds(quadTree.sw, bounds, result)
+      }
+    }
+    if (maxX > quadTree.bounds.centerX) {
+      if (minY < quadTree.bounds.centerY) {
+        getElementsInBounds(quadTree.ne, bounds, result)
+      }
+      if (maxY > quadTree.bounds.centerY) {
+        getElementsInBounds(quadTree.se, bounds, result)
+      }
+    }
+  }
+  return result
 }
+
+interface TestPoint extends Point {
+  i: number,
+}
+
+const points: TestPoint[] = []
+for (let i = 0; i < 200; i++) {
+  points.push({ i, x: Math.random(), y: Math.random() })
+}
+
+console.log(inspect(points))
 
 const t = createQuadtree(createBounds(0.5, 0.5, 0.5), points)
 const extra = [
   { x: 0.01, y: 0.01, thing: 'TOP LEFT' },
   { x: 0.5, y: 0.5, thing: 'MIDDLE' },
 ]
-const before = insertElements(t, extra)
+
+/*
 const after = removeElements(before, extra)
 console.log(inspect(before, { depth: 10 }))
 console.log('\n\n-------------------\n\n')
 console.log(inspect(after, { depth: 10 }))
+*/
+
+//console.log(inspect(getElementsInBounds(before, { centerX: 0.5, centerY: 0.5, extent: 0.1 }), { depth: 10 }))
+const before = insertElements(t, extra)
+console.log(inspect(before, { depth: 10 }))
+console.log(getElementsInBounds(before, { centerX: 0.5, centerY: 0.5, extent: 1 }).length)
+const removed = removeElements(before, points.slice(0, 5))
+console.log(getElementsInBounds(removed, { centerX: 0.5, centerY: 0.5, extent: 1 }).length)
+
