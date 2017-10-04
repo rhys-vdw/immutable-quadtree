@@ -22,8 +22,8 @@ interface LeafNode<T extends Point> {
 
 interface SubdividedNode<T extends Point> {
   bounds: Bounds
-  ne: QuadTree<T>
   nw: QuadTree<T>
+  ne: QuadTree<T>
   sw: QuadTree<T>
   se: QuadTree<T>
 }
@@ -37,8 +37,8 @@ function isSubdividedNode<T extends Point>(obj: QuadTree<T>): obj is SubdividedN
 }
 
 interface ElementsByQuadrant<T extends Point> {
-  ne: T[]
   nw: T[]
+  ne: T[]
   sw: T[]
   se: T[]
 }
@@ -190,7 +190,7 @@ function getElementsInBounds<T extends Point>(quadTree: QuadTree<T>, bounds: Bou
 }
 
 interface TestPoint extends Point {
-  i: number,
+  i: number
 }
 
 const points: TestPoint[] = []
@@ -216,7 +216,5 @@ console.log(inspect(after, { depth: 10 }))
 //console.log(inspect(getElementsInBounds(before, { centerX: 0.5, centerY: 0.5, extent: 0.1 }), { depth: 10 }))
 const before = insertElements(t, extra)
 console.log(inspect(before, { depth: 10 }))
-console.log(getElementsInBounds(before, { centerX: 0.5, centerY: 0.5, extent: 1 }).length)
-const removed = removeElements(before, points.slice(0, 5))
-console.log(getElementsInBounds(removed, { centerX: 0.5, centerY: 0.5, extent: 1 }).length)
+console.log(getElementsInBounds(before, { centerX: 0.5, centerY: 0.5, extent: 0.1 }))
 
