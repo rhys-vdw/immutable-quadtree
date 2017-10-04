@@ -1,5 +1,5 @@
 
-import { without } from 'lodash'
+import without from 'lodash/without'
 import { inspect } from 'util'
 
 interface Point {
