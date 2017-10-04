@@ -1,6 +1,6 @@
 import { inspect } from 'util'
 
-import { createQuadtree, insertElements, getElementsInBounds } from './QuadTree'
+import { createQuadtree, insertElements, getElementsInBounds } from './Quadtree'
 import { createBounds } from './Bounds'
 import Point from './Point'
 

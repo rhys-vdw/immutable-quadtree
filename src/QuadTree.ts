@@ -9,9 +9,9 @@ const MAX_ELEMENTS = 4
 
 // -- Types --
 
-type QuadTree<T extends Point> = LeafNode<T> | SubdividedNode<T>
+type Quadtree<T extends Point> = LeafNode<T> | SubdividedNode<T>
 
-export default QuadTree
+export default Quadtree
 
 export interface LeafNode<T extends Point> {
   readonly bounds: Bounds
@@ -20,25 +20,25 @@ export interface LeafNode<T extends Point> {
 
 export interface SubdividedNode<T extends Point> {
   readonly bounds: Bounds
-  readonly nw: QuadTree<T>
-  readonly ne: QuadTree<T>
-  readonly sw: QuadTree<T>
-  readonly se: QuadTree<T>
+  readonly nw: Quadtree<T>
+  readonly ne: Quadtree<T>
+  readonly sw: Quadtree<T>
+  readonly se: Quadtree<T>
 }
 
 // -- Type guards --
 
-export function isLeafNode<T extends Point>(obj: QuadTree<T>): obj is LeafNode<T> {
+export function isLeafNode<T extends Point>(obj: Quadtree<T>): obj is LeafNode<T> {
   return (obj as LeafNode<T>).elements !== undefined
 }
 
-export function isSubdividedNode<T extends Point>(obj: QuadTree<T>): obj is SubdividedNode<T> {
+export function isSubdividedNode<T extends Point>(obj: Quadtree<T>): obj is SubdividedNode<T> {
   return (obj as SubdividedNode<T>).ne !== undefined
 }
 
 // -- Functions --
 
-export function createQuadtree<T extends Point>(bounds: Bounds, elements: ReadonlyArray<T>): QuadTree<T> {
+export function createQuadtree<T extends Point>(bounds: Bounds, elements: ReadonlyArray<T>): Quadtree<T> {
   if (elements.length > MAX_ELEMENTS) {
     return subdivideQuadtree(bounds, elements)
   }
@@ -68,9 +68,9 @@ function subdivideQuadtree<T extends Point>(bounds: Bounds, elements: ReadonlyAr
 }
 
 export function insertElements<T extends Point>(
-  quadTree: QuadTree<T>,
+  quadTree: Quadtree<T>,
   elements: ReadonlyArray<T>
-): QuadTree<T> {
+): Quadtree<T> {
 
   // If there are no elements then we're sweet.
   if (elements.length === 0) {
@@ -97,9 +97,9 @@ export function insertElements<T extends Point>(
 }
 
 export function removeElements<T extends Point>(
-  quadTree: QuadTree<T>,
+  quadTree: Quadtree<T>,
   elements: ReadonlyArray<T>
-): QuadTree<T> {
+): Quadtree<T> {
   if (elements.length === 0) {
     return quadTree
   }
@@ -124,7 +124,7 @@ export function removeElements<T extends Point>(
 }
 
 export function getElementsInBounds<T extends Point>(
-  quadTree: QuadTree<T>,
+  quadTree: Quadtree<T>,
   bounds: Bounds,
   result: T[] = []
 ): T[] {

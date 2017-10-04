@@ -1,6 +1,6 @@
 import Point from './Point'
 import Bounds from './Bounds'
-import { SubdividedNode } from './QuadTree'
+import { SubdividedNode } from './Quadtree'
 
 export interface ElementsByQuadrant<T extends Point> {
   readonly nw: ReadonlyArray<T>
