@@ -1,9 +1,9 @@
 import Point from './Point'
 
 export default interface Bounds {
-  centerX: number
-  centerY: number
-  extent: number
+  readonly centerX: number
+  readonly centerY: number
+  readonly extent: number
 }
 
 export function createBounds(centerX: number, centerY: number, extent: number): Bounds {
