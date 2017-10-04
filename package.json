@@ -2,13 +2,13 @@
   "name": "immutable-quadtree",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf lib && tsc"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Rhys van der Waerden <rhys.vdw@gmail.com>",
+  "license": "MIT",
   "devDependencies": {
     "@types/lodash": "^4.14.76",
     "@types/node": "^8.0.32",
