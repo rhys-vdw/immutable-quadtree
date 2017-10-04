@@ -28,7 +28,7 @@ export interface SubdividedNode<T extends Point> {
 
 // -- Type guards --
 
-export function isLeafNode<T extends Point>(obj: QuadTree<T>) : obj is LeafNode<T> {
+export function isLeafNode<T extends Point>(obj: QuadTree<T>): obj is LeafNode<T> {
   return (obj as LeafNode<T>).elements !== undefined
 }
 
@@ -68,8 +68,8 @@ function subdivideQuadtree<T extends Point>(bounds: Bounds, elements: ReadonlyAr
 }
 
 export function insertElements<T extends Point>(
-    quadTree: QuadTree<T>,
-    elements: ReadonlyArray<T>
+  quadTree: QuadTree<T>,
+  elements: ReadonlyArray<T>
 ): QuadTree<T> {
 
   // If there are no elements then we're sweet.
@@ -97,8 +97,8 @@ export function insertElements<T extends Point>(
 }
 
 export function removeElements<T extends Point>(
-    quadTree: QuadTree<T>,
-    elements: ReadonlyArray<T>
+  quadTree: QuadTree<T>,
+  elements: ReadonlyArray<T>
 ): QuadTree<T> {
   if (elements.length === 0) {
     return quadTree
@@ -124,9 +124,9 @@ export function removeElements<T extends Point>(
 }
 
 export function getElementsInBounds<T extends Point>(
-    quadTree: QuadTree<T>,
-    bounds: Bounds,
-    result: T[] = []
+  quadTree: QuadTree<T>,
+  bounds: Bounds,
+  result: T[] = []
 ): T[] {
   if (isLeafNode(quadTree)) {
     quadTree.elements.forEach(element => {
