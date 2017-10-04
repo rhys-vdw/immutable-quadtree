@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "noImplicitAny": true,
+    "outDir": "lib",
+    "removeComments": true
+  },
+  "include": [
+      "src/**/*"
+  ]
+}

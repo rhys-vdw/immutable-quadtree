@@ -41,6 +41,7 @@ interface ElementsByQuadrant<T extends Point> {
   ne: T[]
   sw: T[]
   se: T[]
+  [propName: string]: T[]
 }
 
 const MAX_ELEMENTS = 4
@@ -66,16 +67,11 @@ function createQuadtree<T extends Point>(bounds: Bounds, elements: T[]): QuadTre
   return { bounds, elements }
 }
 
-function groupByQuadrant<T extends Point>(bounds, elements: T[]): ElementsByQuadrant<T> {
-  return elements.reduce((result, element: T) => {
+function groupByQuadrant<T extends Point>(bounds: Bounds, elements: T[]): ElementsByQuadrant<T> {
+  return elements.reduce((result: ElementsByQuadrant<T>, element: T) => {
     result[getQuadrant(bounds, element)].push(element)
     return result
-  }, {
-    nw: [],
-    ne: [],
-    sw: [],
-    se: [],
-  })
+  }, { nw: [], ne: [], sw: [], se: [] })
 }
 
 function subdivideQuadtree<T extends Point>(bounds: Bounds, elements: T[]): SubdividedNode<T> {
@@ -100,7 +96,7 @@ function subdivideQuadtree<T extends Point>(bounds: Bounds, elements: T[]): Subd
   }
 }
 
-function insertElements<T extends Point>(quadTree: QuadTree<T>, elements) {
+function insertElements<T extends Point>(quadTree: QuadTree<T>, elements: T[]): QuadTree<T> {
 
   // If there are no elements then we're sweet.
   if (elements.length === 0) {
@@ -126,7 +122,7 @@ function insertElements<T extends Point>(quadTree: QuadTree<T>, elements) {
   }
 }
 
-function removeElements<T extends Point>(quadTree: QuadTree<T>, elements): QuadTree<T> {
+function removeElements<T extends Point>(quadTree: QuadTree<T>, elements: T[]): QuadTree<T> {
   if (elements.length === 0) {
     return quadTree
   }
@@ -150,7 +146,7 @@ function removeElements<T extends Point>(quadTree: QuadTree<T>, elements): QuadT
   }
 }
 
-function getQuadrant<T extends Point>(bounds: Bounds, point: T): string {
+function getQuadrant<T extends Point>(bounds: Bounds, point: T): keyof SubdividedNode<T> {
   return point.x < bounds.centerX
     ? point.y < bounds.centerY ? 'nw' : 'sw'
     : point.y < bounds.centerY ? 'ne' : 'se'
@@ -190,7 +186,7 @@ function getElementsInBounds<T extends Point>(quadTree: QuadTree<T>, bounds: Bou
 }
 
 interface TestPoint extends Point {
-  i: number
+  i: any
 }
 
 const points: TestPoint[] = []
@@ -202,8 +198,8 @@ console.log(inspect(points))
 
 const t = createQuadtree(createBounds(0.5, 0.5, 0.5), points)
 const extra = [
-  { x: 0.01, y: 0.01, thing: 'TOP LEFT' },
-  { x: 0.5, y: 0.5, thing: 'MIDDLE' },
+  { x: 0.01, y: 0.01, i: 'TOP LEFT' },
+  { x: 0.5, y: 0.5, i: 'MIDDLE' },
 ]
 
 /*
