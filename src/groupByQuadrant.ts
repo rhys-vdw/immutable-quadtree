@@ -9,7 +9,7 @@ export interface ElementsByQuadrant<T extends Point> {
   readonly se: ReadonlyArray<T>
 }
 
-export interface MutableElementsByQuadrant<T extends Point> {
+interface MutableElementsByQuadrant<T extends Point> {
   nw: T[]
   ne: T[]
   sw: T[]
