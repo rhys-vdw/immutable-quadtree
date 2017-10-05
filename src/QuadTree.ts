@@ -32,11 +32,11 @@ export interface SubdividedNode<T> {
 
 // -- Type guards --
 
-export function isLeafNode<T>(obj: QuadtreeNode<T>): obj is LeafNode<T> {
+function isLeafNode<T>(obj: QuadtreeNode<T>): obj is LeafNode<T> {
   return (obj as LeafNode<T>).entries !== undefined
 }
 
-export function isSubdividedNode<T>(obj: QuadtreeNode<T>): obj is SubdividedNode<T> {
+function isSubdividedNode<T>(obj: QuadtreeNode<T>): obj is SubdividedNode<T> {
   return (obj as SubdividedNode<T>).ne !== undefined
 }
 
