@@ -1,130 +1,207 @@
-import without from 'lodash/without'
-import Point from './Point'
+import { findIndex, without, values } from 'lodash'
+import Point, { defaultToPoint, ToPoint, pointToKey, pointsEqual } from './Point'
 import Bounds, { containsPoint, createBounds } from './Bounds'
 import groupByQuadrant from './groupByQuadrant'
 
 // -- Constants --
 
-const MAX_ELEMENTS = 4
+const DEFAULT_MAX_ENTRIES = 4
 
 // -- Types --
 
-type Quadtree<T extends Point> = LeafNode<T> | SubdividedNode<T>
+export type QuadtreeNode<T> = LeafNode<T> | SubdividedNode<T>
 
-export default Quadtree
-
-export interface LeafNode<T extends Point> {
-  readonly bounds: Bounds
+export interface Entry<T> extends Point {
   readonly elements: ReadonlyArray<T>
 }
 
-export interface SubdividedNode<T extends Point> {
+export type Entries<T> = ReadonlyArray<Entry<T>>
+
+export interface LeafNode<T> {
   readonly bounds: Bounds
-  readonly nw: Quadtree<T>
-  readonly ne: Quadtree<T>
-  readonly sw: Quadtree<T>
-  readonly se: Quadtree<T>
+  readonly entries: Entries<T>
+}
+
+export interface SubdividedNode<T> {
+  readonly bounds: Bounds
+  readonly nw: QuadtreeNode<T>
+  readonly ne: QuadtreeNode<T>
+  readonly sw: QuadtreeNode<T>
+  readonly se: QuadtreeNode<T>
 }
 
 // -- Type guards --
 
-export function isLeafNode<T extends Point>(obj: Quadtree<T>): obj is LeafNode<T> {
-  return (obj as LeafNode<T>).elements !== undefined
+export function isLeafNode<T>(obj: QuadtreeNode<T>): obj is LeafNode<T> {
+  return (obj as LeafNode<T>).entries !== undefined
 }
 
-export function isSubdividedNode<T extends Point>(obj: Quadtree<T>): obj is SubdividedNode<T> {
+export function isSubdividedNode<T>(obj: QuadtreeNode<T>): obj is SubdividedNode<T> {
   return (obj as SubdividedNode<T>).ne !== undefined
 }
 
 // -- Functions --
 
-export function createQuadtree<T extends Point>(bounds: Bounds, elements: ReadonlyArray<T>): Quadtree<T> {
-  if (elements.length > MAX_ELEMENTS) {
-    return subdivideQuadtree(bounds, elements)
-  }
-  return { bounds, elements }
-}
-
-function subdivideQuadtree<T extends Point>(bounds: Bounds, elements: ReadonlyArray<T>): SubdividedNode<T> {
-
-  // Subdivide bounds
-  const halfExtent = bounds.extent / 2
-  const nwBounds = createBounds(bounds.centerX - halfExtent, bounds.centerY - halfExtent, halfExtent)
-  const neBounds = createBounds(bounds.centerX + halfExtent, bounds.centerY - halfExtent, halfExtent)
-  const swBounds = createBounds(bounds.centerX - halfExtent, bounds.centerY + halfExtent, halfExtent)
-  const seBounds = createBounds(bounds.centerX + halfExtent, bounds.centerY + halfExtent, halfExtent)
-
-  // Filter elements
-  const elementsByQuadrant = groupByQuadrant(bounds, elements)
-
-  // Return subdivided quadtree
+function mergeEntries<T>(a: Entry<T>, b: Entry<T>): Entry<T> {
   return {
-    bounds,
-    nw: createQuadtree(nwBounds, elementsByQuadrant.nw),
-    ne: createQuadtree(neBounds, elementsByQuadrant.ne),
-    sw: createQuadtree(swBounds, elementsByQuadrant.sw),
-    se: createQuadtree(seBounds, elementsByQuadrant.se),
+    x: a.x,
+    y: a.y,
+    elements: [...a.elements, ...b.elements]
   }
 }
 
-export function insertElements<T extends Point>(
-  quadTree: Quadtree<T>,
-  elements: ReadonlyArray<T>
-): Quadtree<T> {
+// -- Class --
 
-  // If there are no elements then we're sweet.
-  if (elements.length === 0) {
-    return quadTree
-  }
-
-  // If this is a lead node...
-  if (isLeafNode(quadTree)) {
-    const nextElements = [...quadTree.elements, ...elements]
-    return nextElements.length > MAX_ELEMENTS
-      ? subdivideQuadtree(quadTree.bounds, nextElements)
-      : { bounds: quadTree.bounds, elements: nextElements }
-  }
-
-  // Split them up and insert them into children.
-  const elementsByQuadrant = groupByQuadrant(quadTree.bounds, elements)
-  return {
-    bounds: quadTree.bounds,
-    nw: insertElements(quadTree.nw, elementsByQuadrant.nw),
-    ne: insertElements(quadTree.ne, elementsByQuadrant.ne),
-    sw: insertElements(quadTree.sw, elementsByQuadrant.sw),
-    se: insertElements(quadTree.se, elementsByQuadrant.se),
-  }
+export interface QuadTreeOptions<T> {
+  maxEntries?: number,
+  toPoint?: ToPoint<T>
 }
 
-export function removeElements<T extends Point>(
-  quadTree: Quadtree<T>,
-  elements: ReadonlyArray<T>
-): Quadtree<T> {
-  if (elements.length === 0) {
-    return quadTree
-  }
+export default class QuadTree<T> {
 
-  if (isLeafNode(quadTree)) {
-    const nextElements = without(quadTree.elements, ...elements)
-    if (nextElements.length !== (quadTree.elements.length - elements.length)) {
-      throw new TypeError('Tried to remove elements that were not in quad tree')
+  private readonly maxEntries: number
+  private readonly toPoint: ToPoint<T>
+
+  constructor({ maxEntries, toPoint } : QuadTreeOptions<T> = {}) {
+    if (maxEntries <= 1) {
+      throw new TypeError(`maxEntries must be greater than 1, got ${maxEntries}`)
     }
-    return { ...quadTree, elements: nextElements }
+    this.maxEntries = maxEntries || DEFAULT_MAX_ENTRIES
+    this.toPoint = toPoint || defaultToPoint
   }
 
-  // Split them up and remove them from children.
-  const elementsByQuadrant = groupByQuadrant(quadTree.bounds, elements)
-  return {
-    bounds: quadTree.bounds,
-    nw: removeElements(quadTree.nw, elementsByQuadrant.nw),
-    ne: removeElements(quadTree.ne, elementsByQuadrant.ne),
-    sw: removeElements(quadTree.sw, elementsByQuadrant.sw),
-    se: removeElements(quadTree.se, elementsByQuadrant.se),
+  create(bounds: Bounds, elements: ReadonlyArray<T>): QuadtreeNode<T> {
+    return this.createNode(bounds, this.elementsToEntries(elements))
+  }
+
+  insert(quadTree: QuadtreeNode<T>, elements: ReadonlyArray<T>): QuadtreeNode<T> {
+    return this.insertEntries(quadTree, this.elementsToEntries(elements))
+  }
+
+  remove(quadTree: QuadtreeNode<T>, elements: ReadonlyArray<T>): QuadtreeNode<T> {
+    if (elements.length === 0) {
+      return quadTree
+    }
+
+    if (isLeafNode(quadTree)) {
+      const nextEntries = quadTree.entries.reduce((result: Entry<T>[], entry: Entry<T>): Entry<T>[] => {
+        const nextElements = without(entry.elements, ...elements)
+        if (nextElements.length > 0 && nextElements.length !== entry.elements.length) {
+          result.push({ ...entry, elements: nextElements })
+        }
+        return result
+      }, [])
+      return { ...quadTree, entries: nextEntries }
+    }
+
+    // Split them up and remove them from children.
+    const elementsByQuadrant = groupByQuadrant(quadTree.bounds, elements, this.toPoint)
+    return {
+      bounds: quadTree.bounds,
+      nw: this.remove(quadTree.nw, elementsByQuadrant.nw),
+      ne: this.remove(quadTree.ne, elementsByQuadrant.ne),
+      sw: this.remove(quadTree.sw, elementsByQuadrant.sw),
+      se: this.remove(quadTree.se, elementsByQuadrant.se),
+    }
+  }
+
+
+  private createNode(bounds: Bounds, entries: Entries<T>): QuadtreeNode<T> {
+    if (entries.length > this.maxEntries) {
+      return this.subdivide(bounds, entries)
+    }
+    return { bounds, entries }
+  }
+
+  private elementsToEntries(elements: ReadonlyArray<T>): Entries<T> {
+    interface Accumulator { [key: string]: T[] }
+
+    // Group all elements for duplicates.
+    const elementsByKey = elements.reduce((result: Accumulator, element: T): Accumulator => {
+      const key = pointToKey(this.toPoint(element))
+      if (result[key] === undefined) {
+        result[key] = []
+      }
+      result[key].push(element)
+      return result
+    }, {})
+
+    // Now map them into their entries.
+    return values(elementsByKey).map((elements: T[]) => {
+      const point = this.toPoint(elements[0])
+      return {
+        x: point.x,
+        y: point.y,
+        elements: elements as ReadonlyArray<T>
+      }
+    })
+  }
+
+  private subdivide(bounds: Bounds, entries: Entries<T>): SubdividedNode<T> {
+
+    // Subdivide bounds
+    const halfExtent = bounds.extent / 2
+    const nwBounds = createBounds(bounds.centerX - halfExtent, bounds.centerY - halfExtent, halfExtent)
+    const neBounds = createBounds(bounds.centerX + halfExtent, bounds.centerY - halfExtent, halfExtent)
+    const swBounds = createBounds(bounds.centerX - halfExtent, bounds.centerY + halfExtent, halfExtent)
+    const seBounds = createBounds(bounds.centerX + halfExtent, bounds.centerY + halfExtent, halfExtent)
+
+    // Filter elements
+    const entriesByQuadrant = groupByQuadrant(bounds, entries)
+
+    // Return subdivided quadtree
+    return {
+      bounds,
+      nw: this.createNode(nwBounds, entriesByQuadrant.nw),
+      ne: this.createNode(neBounds, entriesByQuadrant.ne),
+      sw: this.createNode(swBounds, entriesByQuadrant.sw),
+      se: this.createNode(seBounds, entriesByQuadrant.se),
+    }
+  }
+
+  private insertEntries(quadTree: QuadtreeNode<T>, entries: Entries<T>): QuadtreeNode<T> {
+
+    // If there are no entries then we're sweet.
+    if (entries.length === 0) {
+      return quadTree
+    }
+
+    // If this is a leaf node...
+    if (isLeafNode(quadTree)) {
+
+      // Merge any duplicate entries.
+      const nextEntries = entries.reduce((acc: Entry<T>[], entry: Entry<T>): Entry<T>[] => {
+        const index = findIndex(acc, e => pointsEqual(entry, e))
+        if (index === -1) {
+          acc.push(entry)
+        } else {
+          acc[index] = mergeEntries(entry, acc[index])
+        }
+        return acc
+      }, [...quadTree.entries])
+
+      // If necessary split the entries into some new nodes.
+      return nextEntries.length > this.maxEntries
+        ? this.subdivide(quadTree.bounds, nextEntries)
+        : { bounds: quadTree.bounds, entries: nextEntries }
+    }
+
+    // This is already a subdivided node...
+    // Split them up and insert them into children.
+    const entriesByQuadrant = groupByQuadrant(quadTree.bounds, entries)
+    return {
+      bounds: quadTree.bounds,
+      nw: this.insertEntries(quadTree.nw, entriesByQuadrant.nw),
+      ne: this.insertEntries(quadTree.ne, entriesByQuadrant.ne),
+      sw: this.insertEntries(quadTree.sw, entriesByQuadrant.sw),
+      se: this.insertEntries(quadTree.se, entriesByQuadrant.se),
+    }
   }
 }
 
+/*
 export function getElementsInBounds<T extends Point>(
-  quadTree: Quadtree<T>,
+  quadTree: QuadtreeNode<T>,
   bounds: Bounds,
   result: T[] = []
 ): T[] {
@@ -159,3 +236,5 @@ export function getElementsInBounds<T extends Point>(
   }
   return result
 }
+
+*/

@@ -5,6 +5,8 @@
     "noImplicitAny": true,
     "outDir": "lib",
     "removeComments": true
+    "removeComments": true,
+    "target": "es5"
   },
   "include": [
       "src/**/*"
