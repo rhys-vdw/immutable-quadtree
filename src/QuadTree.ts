@@ -105,6 +105,45 @@ export default class QuadTree<T> {
     }
   }
 
+  inBounds(quadTree: QuadtreeNode<T>, bounds: Bounds): T[] {
+    const result: T[] = []
+    this.pushInBounds(quadTree, bounds, result)
+    return result
+  }
+
+  private pushInBounds(quadTree: QuadtreeNode<T>, bounds: Bounds, result: T[]): void {
+
+    if (isLeafNode(quadTree)) {
+      quadTree.entries.forEach(entry => {
+        if (containsPoint(bounds, entry)) {
+          result.push(...entry.elements)
+        }
+      })
+      return
+    }
+
+    const minX = bounds.centerX - bounds.extent
+    const maxX = bounds.centerX + bounds.extent
+    const minY = bounds.centerY - bounds.extent
+    const maxY = bounds.centerY + bounds.extent
+
+    if (minX < quadTree.bounds.centerX) {
+      if (minY < quadTree.bounds.centerY) {
+        this.pushInBounds(quadTree.nw, bounds, result)
+      }
+      if (maxY > quadTree.bounds.centerY) {
+        this.pushInBounds(quadTree.sw, bounds, result)
+      }
+    }
+    if (maxX > quadTree.bounds.centerX) {
+      if (minY < quadTree.bounds.centerY) {
+        this.pushInBounds(quadTree.ne, bounds, result)
+      }
+      if (maxY > quadTree.bounds.centerY) {
+        this.pushInBounds(quadTree.se, bounds, result)
+      }
+    }
+  }
 
   private createNode(bounds: Bounds, entries: Entries<T>): QuadtreeNode<T> {
     if (entries.length > this.maxEntries) {
@@ -198,43 +237,3 @@ export default class QuadTree<T> {
     }
   }
 }
-
-/*
-export function getElementsInBounds<T extends Point>(
-  quadTree: QuadtreeNode<T>,
-  bounds: Bounds,
-  result: T[] = []
-): T[] {
-  if (isLeafNode(quadTree)) {
-    quadTree.elements.forEach(element => {
-      if (containsPoint(bounds, element)) {
-        result.push(element)
-      }
-    })
-  } else {
-    const minX = bounds.centerX - bounds.extent
-    const maxX = bounds.centerX + bounds.extent
-    const minY = bounds.centerY - bounds.extent
-    const maxY = bounds.centerY + bounds.extent
-
-    if (minX < quadTree.bounds.centerX) {
-      if (minY < quadTree.bounds.centerY) {
-        getElementsInBounds(quadTree.nw, bounds, result)
-      }
-      if (maxY > quadTree.bounds.centerY) {
-        getElementsInBounds(quadTree.sw, bounds, result)
-      }
-    }
-    if (maxX > quadTree.bounds.centerX) {
-      if (minY < quadTree.bounds.centerY) {
-        getElementsInBounds(quadTree.ne, bounds, result)
-      }
-      if (maxY > quadTree.bounds.centerY) {
-        getElementsInBounds(quadTree.se, bounds, result)
-      }
-    }
-  }
-  return result
-}
-
-*/
