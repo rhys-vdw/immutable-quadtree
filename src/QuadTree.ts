@@ -70,7 +70,7 @@ export default class QuadTree<T> {
     this.toPoint = toPoint || defaultToPoint
   }
 
-  create(bounds: Bounds, elements: ReadonlyArray<T>): QuadtreeNode<T> {
+  create(bounds: Bounds, elements: ReadonlyArray<T> = []): QuadtreeNode<T> {
     return this.createNode(bounds, this.elementsToEntries(elements))
   }
 
