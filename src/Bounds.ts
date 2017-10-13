@@ -6,11 +6,11 @@ export default interface Bounds {
   readonly extent: number
 }
 
-export function createBounds(centerX: number, centerY: number, extent: number): Bounds {
+export function createBounds (centerX: number, centerY: number, extent: number): Bounds {
   return { centerX, centerY, extent }
 }
 
-export function containsPoint(bounds: Bounds, point: Point) {
+export function containsPoint (bounds: Bounds, point: Point) {
   return (
     point.x >= bounds.centerX - bounds.extent &&
     point.x <= bounds.centerX + bounds.extent &&

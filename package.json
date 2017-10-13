@@ -5,6 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "tape -r ts-node/register test/*.ts | tap-spec",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
     "build": "rm -rf lib && tsc"
   },
   "author": "Rhys van der Waerden <rhys.vdw@gmail.com>",
@@ -16,6 +17,8 @@
     "tap-spec": "^4.1.1",
     "tape": "^4.8.0",
     "ts-node": "^3.3.0",
+    "tslint": "^5.7.0",
+    "tslint-config-standard": "^6.0.1",
     "typescript": "^2.5.3"
   },
   "dependencies": {

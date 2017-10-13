@@ -32,17 +32,17 @@ export interface SubdividedNode<T> {
 
 // -- Type guards --
 
-export function isLeafNode<T>(obj: QuadtreeNode<T>): obj is LeafNode<T> {
+export function isLeafNode<T> (obj: QuadtreeNode<T>): obj is LeafNode<T> {
   return (obj as LeafNode<T>).entries !== undefined
 }
 
-export function isSubdividedNode<T>(obj: QuadtreeNode<T>): obj is SubdividedNode<T> {
+export function isSubdividedNode<T> (obj: QuadtreeNode<T>): obj is SubdividedNode<T> {
   return (obj as SubdividedNode<T>).ne !== undefined
 }
 
 // -- Functions --
 
-function mergeEntries<T>(entries: Entries<T>): Entry<T> {
+function mergeEntries<T> (entries: Entries<T>): Entry<T> {
   if (entries.length === 1) {
     return entries[0]
   }
@@ -69,7 +69,7 @@ export default class QuadTree<T> {
   private readonly maxEntries: number
   private readonly toPoint: ToPoint<T>
 
-  constructor({ maxEntries, toPoint } : QuadTreeOptions<T> = {}) {
+  constructor ({ maxEntries, toPoint }: QuadTreeOptions<T> = {}) {
     if (maxEntries <= 1) {
       throw new TypeError(`maxEntries must be greater than 1, got ${maxEntries}`)
     }
@@ -77,15 +77,15 @@ export default class QuadTree<T> {
     this.toPoint = toPoint || defaultToPoint
   }
 
-  create(bounds: Bounds, elements: ReadonlyArray<T> = []): QuadtreeNode<T> {
+  create (bounds: Bounds, elements: ReadonlyArray<T> = []): QuadtreeNode<T> {
     return this.createNode(bounds, this.elementsToEntries(elements))
   }
 
-  insert(quadTree: QuadtreeNode<T>, elements: ReadonlyArray<T>): QuadtreeNode<T> {
+  insert (quadTree: QuadtreeNode<T>, elements: ReadonlyArray<T>): QuadtreeNode<T> {
     return this.insertEntries(quadTree, this.elementsToEntries(elements))
   }
 
-  remove(quadTree: QuadtreeNode<T>, elements: ReadonlyArray<T>): QuadtreeNode<T> {
+  remove (quadTree: QuadtreeNode<T>, elements: ReadonlyArray<T>): QuadtreeNode<T> {
     if (elements.length === 0) {
       return quadTree
     }
@@ -112,17 +112,17 @@ export default class QuadTree<T> {
       nw: this.remove(quadTree.nw, elementsByQuadrant.nw),
       ne: this.remove(quadTree.ne, elementsByQuadrant.ne),
       sw: this.remove(quadTree.sw, elementsByQuadrant.sw),
-      se: this.remove(quadTree.se, elementsByQuadrant.se),
+      se: this.remove(quadTree.se, elementsByQuadrant.se)
     }
   }
 
-  inBounds(quadTree: QuadtreeNode<T>, bounds: Bounds): T[] {
+  inBounds (quadTree: QuadtreeNode<T>, bounds: Bounds): T[] {
     const result: T[] = []
     this.pushInBounds(quadTree, bounds, result)
     return result
   }
 
-  private pushInBounds(quadTree: QuadtreeNode<T>, bounds: Bounds, result: T[]): void {
+  private pushInBounds (quadTree: QuadtreeNode<T>, bounds: Bounds, result: T[]): void {
 
     if (isLeafNode(quadTree)) {
       quadTree.entries.forEach(entry => {
@@ -156,14 +156,14 @@ export default class QuadTree<T> {
     }
   }
 
-  private createNode(bounds: Bounds, entries: Entries<T>): QuadtreeNode<T> {
+  private createNode (bounds: Bounds, entries: Entries<T>): QuadtreeNode<T> {
     if (entries.length > this.maxEntries) {
       return this.subdivide(bounds, entries)
     }
     return { bounds, entries }
   }
 
-  private elementsToEntries(elements: ReadonlyArray<T>): Entries<T> {
+  private elementsToEntries (elements: ReadonlyArray<T>): Entries<T> {
     // Group all elements for duplicates.
     const elementsByKey = groupBy(elements, e => pointToKey(this.toPoint(e)))
 
@@ -178,7 +178,7 @@ export default class QuadTree<T> {
     })
   }
 
-  private subdivide(bounds: Bounds, entries: Entries<T>): SubdividedNode<T> {
+  private subdivide (bounds: Bounds, entries: Entries<T>): SubdividedNode<T> {
 
     // Subdivide bounds
     const halfExtent = bounds.extent / 2
@@ -196,11 +196,11 @@ export default class QuadTree<T> {
       nw: this.createNode(nwBounds, entriesByQuadrant.nw),
       ne: this.createNode(neBounds, entriesByQuadrant.ne),
       sw: this.createNode(swBounds, entriesByQuadrant.sw),
-      se: this.createNode(seBounds, entriesByQuadrant.se),
+      se: this.createNode(seBounds, entriesByQuadrant.se)
     }
   }
 
-  private insertEntries(quadTree: QuadtreeNode<T>, entries: Entries<T>): QuadtreeNode<T> {
+  private insertEntries (quadTree: QuadtreeNode<T>, entries: Entries<T>): QuadtreeNode<T> {
 
     // If there are no entries then we're sweet.
     if (entries.length === 0) {
@@ -229,7 +229,7 @@ export default class QuadTree<T> {
       nw: this.insertEntries(quadTree.nw, entriesByQuadrant.nw),
       ne: this.insertEntries(quadTree.ne, entriesByQuadrant.ne),
       sw: this.insertEntries(quadTree.sw, entriesByQuadrant.sw),
-      se: this.insertEntries(quadTree.se, entriesByQuadrant.se),
+      se: this.insertEntries(quadTree.se, entriesByQuadrant.se)
     }
   }
 }

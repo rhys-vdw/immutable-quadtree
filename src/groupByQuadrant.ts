@@ -17,13 +17,13 @@ interface MutableElementsByQuadrant<T> {
   [propName: string]: T[]
 }
 
-function getQuadrant<T>(bounds: Bounds, point: Point): keyof ElementsByQuadrant<T> {
+function getQuadrant<T> (bounds: Bounds, point: Point): keyof ElementsByQuadrant<T> {
   return point.x < bounds.centerX
     ? point.y < bounds.centerY ? 'nw' : 'sw'
     : point.y < bounds.centerY ? 'ne' : 'se'
 }
 
-export default function groupByQuadrant<T>(
+export default function groupByQuadrant<T> (
   bounds: Bounds,
   elements: ReadonlyArray<T>,
   toPoint: ToPoint<T> = defaultToPoint
