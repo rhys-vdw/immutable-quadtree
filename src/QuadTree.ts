@@ -114,11 +114,11 @@ export default class QuadTree<T> {
 
   inBounds (quadTree: QuadtreeNode<T>, bounds: Bounds): T[] {
     const result: T[] = []
-    this.pushInBounds(quadTree, bounds, result)
+    this.reduceInBounds(quadTree, bounds, result)
     return result
   }
 
-  private pushInBounds (quadTree: QuadtreeNode<T>, bounds: Bounds, result: T[]): void {
+  private reduceInBounds (quadTree: QuadtreeNode<T>, bounds: Bounds, result: T[]): void {
 
     if (isLeafNode(quadTree)) {
       quadTree.entries.forEach(entry => {
@@ -136,18 +136,18 @@ export default class QuadTree<T> {
 
     if (minX < quadTree.bounds.centerX) {
       if (minY < quadTree.bounds.centerY) {
-        this.pushInBounds(quadTree.nw, bounds, result)
+        this.reduceInBounds(quadTree.nw, bounds, result)
       }
       if (maxY > quadTree.bounds.centerY) {
-        this.pushInBounds(quadTree.sw, bounds, result)
+        this.reduceInBounds(quadTree.sw, bounds, result)
       }
     }
     if (maxX > quadTree.bounds.centerX) {
       if (minY < quadTree.bounds.centerY) {
-        this.pushInBounds(quadTree.ne, bounds, result)
+        this.reduceInBounds(quadTree.ne, bounds, result)
       }
       if (maxY > quadTree.bounds.centerY) {
-        this.pushInBounds(quadTree.se, bounds, result)
+        this.reduceInBounds(quadTree.se, bounds, result)
       }
     }
   }
