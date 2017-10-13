@@ -1,7 +1,7 @@
 import { findIndex, groupBy, without, values, map, reduce } from 'lodash'
 import Point, { defaultToPoint, ToPoint, pointToKey, pointsEqual } from './Point'
 import Bounds, { containsPoint, createBounds } from './Bounds'
-import groupByQuadrant from './groupByQuadrant'
+import { Quadrants, groupByQuadrant } from './Quadrant'
 
 // -- Constants --
 
@@ -22,12 +22,8 @@ export interface LeafNode<T> {
   readonly entries: Entries<T>
 }
 
-export interface SubdividedNode<T> {
+export interface SubdividedNode<T> extends Quadrants<QuadtreeNode<T>> {
   readonly bounds: Bounds
-  readonly nw: QuadtreeNode<T>
-  readonly ne: QuadtreeNode<T>
-  readonly sw: QuadtreeNode<T>
-  readonly se: QuadtreeNode<T>
 }
 
 // -- Type guards --
