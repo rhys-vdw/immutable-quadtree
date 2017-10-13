@@ -50,7 +50,7 @@ function mergeEntries<T> (entries: Entries<T>): Entry<T> {
   return {
     x: entries[0].x,
     y: entries[0].y,
-    elements: entries.reduce((acc, entry) => {
+    elements: entries.reduce<T[]>((acc, entry) => {
       acc.push(...entry.elements)
       return acc
     }, [])
