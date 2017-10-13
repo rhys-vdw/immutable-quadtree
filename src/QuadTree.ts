@@ -1,4 +1,4 @@
-import { findIndex, without, values } from 'lodash'
+import { findIndex, groupBy, without, values, map, reduce } from 'lodash'
 import Point, { defaultToPoint, ToPoint, pointToKey, pointsEqual } from './Point'
 import Bounds, { containsPoint, createBounds } from './Bounds'
 import groupByQuadrant from './groupByQuadrant'
@@ -42,11 +42,18 @@ export function isSubdividedNode<T>(obj: QuadtreeNode<T>): obj is SubdividedNode
 
 // -- Functions --
 
-function mergeEntries<T>(a: Entry<T>, b: Entry<T>): Entry<T> {
+function mergeEntries<T>(entries: Entries<T>): Entry<T> {
+  if (entries.length === 1) {
+    return entries[0]
+  }
+
   return {
-    x: a.x,
-    y: a.y,
-    elements: [...a.elements, ...b.elements]
+    x: entries[0].x,
+    y: entries[0].y,
+    elements: entries.reduce((acc, entry) => {
+      acc.push(...entry.elements)
+      return acc
+    }, [])
   }
 }
 
@@ -85,8 +92,12 @@ export default class QuadTree<T> {
 
     if (isLeafNode(quadTree)) {
       const nextEntries = quadTree.entries.reduce((result: Entry<T>[], entry: Entry<T>): Entry<T>[] => {
+        // TODO: Create `immutableWithout` helper so this doens't allocate
+        //       unnecessary arrays
         const nextElements = without(entry.elements, ...elements)
-        if (nextElements.length > 0 && nextElements.length !== entry.elements.length) {
+        if (nextElements.length === entry.elements.length) {
+          result.push(entry)
+        } else if (nextElements.length > 0) {
           result.push({ ...entry, elements: nextElements })
         }
         return result
@@ -153,17 +164,8 @@ export default class QuadTree<T> {
   }
 
   private elementsToEntries(elements: ReadonlyArray<T>): Entries<T> {
-    interface Accumulator { [key: string]: T[] }
-
     // Group all elements for duplicates.
-    const elementsByKey = elements.reduce((result: Accumulator, element: T): Accumulator => {
-      const key = pointToKey(this.toPoint(element))
-      if (result[key] === undefined) {
-        result[key] = []
-      }
-      result[key].push(element)
-      return result
-    }, {})
+    const elementsByKey = groupBy(elements, e => pointToKey(this.toPoint(e)))
 
     // Now map them into their entries.
     return values(elementsByKey).map((elements: T[]) => {
@@ -209,15 +211,9 @@ export default class QuadTree<T> {
     if (isLeafNode(quadTree)) {
 
       // Merge any duplicate entries.
-      const nextEntries = entries.reduce((acc: Entry<T>[], entry: Entry<T>): Entry<T>[] => {
-        const index = findIndex(acc, e => pointsEqual(entry, e))
-        if (index === -1) {
-          acc.push(entry)
-        } else {
-          acc[index] = mergeEntries(entry, acc[index])
-        }
-        return acc
-      }, [...quadTree.entries])
+      const nextEntries = quadTree.entries.length === 0
+        ? entries
+        : map(groupBy<Entry<T>>([...quadTree.entries, ...entries], pointToKey), mergeEntries)
 
       // If necessary split the entries into some new nodes.
       return nextEntries.length > this.maxEntries
