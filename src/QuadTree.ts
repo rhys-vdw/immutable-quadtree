@@ -55,17 +55,17 @@ function mergeEntries<T> (entries: Entries<T>): Entry<T> {
 
 // -- Class --
 
-export interface QuadTreeOptions<T> {
+export interface QuadtreeOptions<T> {
   maxEntries?: number,
   toPoint?: ToPoint<T>
 }
 
-export default class QuadTree<T> {
+export default class Quadtree<T> {
 
   private readonly maxEntries: number
   private readonly toPoint: ToPoint<T>
 
-  constructor ({ maxEntries, toPoint }: QuadTreeOptions<T> = {}) {
+  constructor ({ maxEntries, toPoint }: QuadtreeOptions<T> = {}) {
     if (maxEntries <= 1) {
       throw new TypeError(`maxEntries must be greater than 1, got ${maxEntries}`)
     }

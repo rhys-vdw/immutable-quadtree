@@ -2,15 +2,15 @@ import test = require('tape')
 import { Test } from 'tape'
 import { createBounds } from '../src/Bounds'
 import Point from '../src/Point'
-import QuadTree, { isLeafNode, isSubdividedNode, LeafNode } from '../src/Quadtree'
+import Quadtree, { isLeafNode, isSubdividedNode, LeafNode } from '../src/Quadtree'
 import { flatMap, times, constant } from 'lodash'
 import { assertType, assertIsLeafNodeWithElements } from './helpers/assertions'
 
 const bounds01 = createBounds(0.5, 0.5, 1)
 const maxEntries = 2
-const quadTree = new QuadTree({ maxEntries })
+const quadTree = new Quadtree({ maxEntries })
 
-test('QuadTree#create', t => {
+test('Quadtree#create', t => {
   t.test('with maximum number of elements for single node', q => {
     const elements = [
       { x: 0.1, y: 0.1 },
@@ -39,7 +39,7 @@ test('QuadTree#create', t => {
   })
 })
 
-test('QuadTree#insert', t => {
+test('Quadtree#insert', t => {
   t.test('inserting fewer than max', q => {
     const empty = quadTree.create(bounds01)
     assertIsLeafNodeWithElements(q, empty, [], 'empty')
@@ -49,7 +49,7 @@ test('QuadTree#insert', t => {
   })
 })
 
-test('QuadTree#remove', t => {
+test('Quadtree#remove', t => {
   const elements = [
     { x: 0.1, y: 0.1 },
     { x: 0.1, y: 0.1 },

@@ -1,6 +1,6 @@
 import { inspect } from 'util'
 
-import QuadTree from './Quadtree'
+import Quadtree from './Quadtree'
 import { createBounds } from './Bounds'
 import Point from './Point'
 
@@ -16,7 +16,7 @@ for (let i = 0; i < 20; i++) {
 
 console.log(inspect(points))
 
-const quadTree = new QuadTree<TestPoint>()
+const quadTree = new Quadtree<TestPoint>()
 const t = quadTree.create(createBounds(0.5, 0.5, 0.5), points)
 const extra = [
   { x: 0.01, y: 0.01, i: 'TOP LEFT' },
