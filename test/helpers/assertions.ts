@@ -3,7 +3,7 @@ import { QuadtreeNode, isLeafNode } from '../../src/Quadtree'
 import Point from '../../src/Point'
 import { flatMap } from 'lodash'
 
-function entriesToElements(entries: ReadonlyArray<Point>): Point[] {
+function entriesToElements (entries: ReadonlyArray<Point>): Point[] {
   return flatMap(entries, 'elements')
 }
 
@@ -18,7 +18,7 @@ export function assertType<T>(
   return result
 }
 
-export function assertIsLeafNodeWithElements(
+export function assertIsLeafNodeWithElements (
   t: Test,
   node: QuadtreeNode<any>,
   elements: ReadonlyArray<any>,
