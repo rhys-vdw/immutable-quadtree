@@ -1,4 +1,4 @@
-import { findIndex, groupBy, without, values, map, reduce } from 'lodash'
+import { findIndex, groupBy, without, values, map, reduce, pull } from 'lodash'
 import Point, { defaultToPoint, ToPoint, pointToKey, pointsEqual } from './Point'
 import Bounds, { containsPoint, createBounds } from './Bounds'
 import { Quadrants, groupByQuadrant } from './Quadrant'
@@ -87,15 +87,30 @@ export default class QuadTree<T> {
     }
 
     if (isLeafNode(quadTree)) {
-      const nextEntries = quadTree.entries.reduce((result: Entry<T>[], entry: Entry<T>): Entry<T>[] => {
-        // TODO: Create `immutableWithout` helper so this doens't allocate
-        //       unnecessary arrays
-        const nextElements = without(entry.elements, ...elements)
-        if (nextElements.length === entry.elements.length) {
-          result.push(entry)
-        } else if (nextElements.length > 0) {
-          result.push({ ...entry, elements: nextElements })
+      const toRemove = [...elements]
+      const nextEntries = quadTree.entries.reduce<Entry<T>[]>((result, entry) => {
+        let nextElements = null
+        // Step backwards along the list so we can modify if it on the fly.
+        for (let i = toRemove.length - 1; i >= 0; i--) {
+          if (pointsEqual(this.toPoint(toRemove[i]), entry)) {
+            if (nextElements === null) {
+              nextElements = [...entry.elements]
+            }
+            pull(nextElements, toRemove[i])
+
+            // If there are no elements left in the entry, exclude it.
+            if (nextElements.length === 0) return result
+
+            // Each entry has a unique point, so the element to remove was
+            // either found here or is not in the tree.
+            toRemove.splice(i, 1)
+          }
         }
+
+        result.push(nextElements === null
+          ? entry
+          : { ...entry, elements: nextElements }
+        )
         return result
       }, [])
       return { ...quadTree, entries: nextEntries }
